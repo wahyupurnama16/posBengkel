@@ -88,51 +88,6 @@ php artisan serve
 
 Aplikasi akan berjalan di `http://localhost:8000`
 
-## Setup Panel Admin
-
-Panel admin Filament dapat diakses di `http://localhost:8000/admin`
-
-### Membuat user admin
-
-```bash
-php artisan make:filament-user
-```
-
-## Konfigurasi Lanjutan
-
-### Mengatasi Duplikasi Menu Dashboard
-
-Jika Anda mengalami masalah duplikasi menu Dashboard di sidebar, periksa dan edit file berikut:
-
-```php
-// app/Providers/Filament/AdminPanelProvider.php
-
-public function panel(Panel $panel): Panel
-{
-    return $panel
-        // ...
-        ->navigation(function (NavigationBuilder $builder): NavigationBuilder {
-            return $builder->items([
-                // Pastikan hanya ada satu item Dashboard
-                NavigationItem::make('Dashboard')
-                    ->icon('heroicon-o-home')
-                    ->url(route('filament.admin.pages.dashboard')),
-                // Item navigasi lainnya
-            ]);
-        });
-}
-```
-
-Atau periksa definisi navigasi di halaman kustom:
-
-```php
-// app/Filament/Pages/Dashboard.php atau file halaman lainnya
-protected static function getNavigationLabel(): string
-{
-    return 'Dashboard'; // Pastikan tidak ada duplikasi dengan label navigasi lain
-}
-```
-
 ## Kontribusi
 
 Silahkan buat pull request untuk berkontribusi pada proyek ini.
