@@ -1,41 +1,27 @@
 <?php
-
 namespace App\Filament\Resources;
 
+use App\Filament\Resources\TransactionResource\Pages;
+use App\Models\Customer;
+use App\Models\Sparepart;
+use App\Models\Transaction;
 use Filament\Forms;
-use Filament\Tables;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
-use App\Models\Customer;
-use Filament\Forms\Form;
-use App\Models\Sparepart;
-use Filament\Tables\Table;
-use App\Models\Transaction;
-use Filament\Actions\EditAction;
-use Filament\Resources\Resource;
-use Filament\Actions\DeleteAction;
-use Illuminate\Support\Collection;
-use Filament\Forms\Components\Card;
-use Filament\Tables\Actions\Action;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Repeater;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
-use Filament\Forms\Components\DatePicker;
-use Illuminate\Database\Eloquent\Builder;
-use Filament\Tables\Actions\DeleteBulkAction;
-use App\Filament\Resources\TransactionResource\Pages;
-use App\Filament\Resources\TransactionResource\Pages\EditTransaction;
-use App\Filament\Resources\TransactionResource\Pages\ListTransactions;
-use App\Filament\Resources\TransactionResource\Pages\CreateTransaction;
-use App\Filament\Resources\TransactionResource\Pages\TransactionDetails;
-
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Actions\Action;
+use Filament\Tables\Table;
 
 class TransactionResource extends Resource
 {
-    protected static ?string $model = Transaction::class;
-    protected static ?string $navigationIcon = 'heroicon-o-shopping-cart';
+    protected static ?string $model           = Transaction::class;
+    protected static ?string $navigationIcon  = 'heroicon-o-shopping-cart';
     protected static ?string $navigationLabel = 'Transactions';
 
     public static function form(Form $form): Form
@@ -44,24 +30,25 @@ class TransactionResource extends Resource
             ->schema([
                 Forms\Components\Card::make()
                     ->schema([
-                         TextInput::make('invoice')
+                        TextInput::make('invoice')
                             ->readonly()
                             ->required()
-                            ->default(function() {
-                                $dateCode = now()->format('Ymd');
+                            ->default(function () {
+                                $dateCode          = now()->format('Ymd');
                                 $latestTransaction = Transaction::where('invoice', 'like', "INV-{$dateCode}%")
                                     ->orderBy('id', 'desc')
                                     ->first();
-                                if (!$latestTransaction) {
+                                if (! $latestTransaction) {
                                     $nextNumber = '0001';
                                 } else {
                                     $lastNumber = substr($latestTransaction->invoice, -4);
-                                    $nextNumber = str_pad((int)$lastNumber + 1, 4, '0', STR_PAD_LEFT);
+                                    $nextNumber = str_pad((int) $lastNumber + 1, 4, '0', STR_PAD_LEFT);
                                 }
-                                
+
                                 // Gabungkan semua menjadi format INV-YYYYMMDD-0001
                                 return "INV-{$dateCode}-{$nextNumber}";
                             }),
+
                         Forms\Components\Select::make('customer_id')
                             ->label('Customer')
                             ->options(Customer::all()->pluck('name', 'id'))
@@ -84,12 +71,12 @@ class TransactionResource extends Resource
                                     ->modalButton('Create customer')
                                     ->modalWidth('md');
                             })
-                             ->createOptionUsing(function (array $data, Forms\Components\Select $component) {
+                            ->createOptionUsing(function (array $data, Forms\Components\Select $component) {
                                 $customer = Customer::create($data);
-                                
+
                                 // This forces the component to re-evaluate its options
                                 $component->state($customer->id);
-                                
+
                                 // Return the customer ID to set it as the selected value
                                 return $customer->id;
                             }),
@@ -97,7 +84,7 @@ class TransactionResource extends Resource
                         Forms\Components\DatePicker::make('transaction_date')
                             ->required()
                             ->default(now()),
-                        
+
                         Repeater::make('transaction_details')
                             ->relationship()
                             ->schema([
@@ -109,7 +96,10 @@ class TransactionResource extends Resource
                                     ->live(onBlur: true)
                                     ->afterStateUpdated(function ($state, Set $set) {
                                         // Find the sparepart
-                                        if ($state === null) return;
+                                        if ($state === null) {
+                                            return;
+                                        }
+
                                         $sparepart = Sparepart::find($state);
                                         if ($sparepart) {
                                             $price = $sparepart->price;
@@ -127,65 +117,132 @@ class TransactionResource extends Resource
                                     ->live(onBlur: true)
                                     ->afterStateUpdated(function (string $state, Set $set, Get $get) {
                                         $sparepart = Sparepart::find($get('sparepart_id'));
-                                        $price = $get('price');
-                                        $quantity = intval($state);
-                                        if($sparepart->stock >= $quantity){
+                                        $price     = $get('price');
+                                        $quantity  = intval($state);
+                                        if ($sparepart->stock >= $quantity) {
                                             if ($price && $quantity > 0) {
                                                 $subtotal = floatval($price) * $quantity;
                                                 $set('subtotal', $subtotal);
                                             }
-                                        }else{
+                                        } else {
                                             Notification::make()
                                                 ->title('Insufficient Stock')
                                                 ->body("Available stock: {$sparepart->stock}. You requested: {$quantity}")
                                                 ->danger()
                                                 ->send();
-                                                
+
                                             // Reset values
-                                            $set('quantity',  1);
+                                            $set('quantity', 1);
                                             $set('subtotal', floatval($price));
                                         }
                                     }),
 
                                 TextInput::make('price')
                                     ->numeric()
-                                    ->required(),
+                                    ->required()
+                                    ->readonly(),
 
                                 TextInput::make('subtotal')
                                     ->numeric()
-                                    ->required(),
+                                    ->required()
+                                    ->readonly(),
                             ])
                             ->columns(4)
                             ->defaultItems(1)
                             ->live(onBlur: true)
                             ->afterStateUpdated(function (Set $set, Get $get) {
                                 // Calculate total directly from all transaction details
-                                $details = $get('transaction_details');
+                                $details      = $get('transaction_details');
+                                $WorkServices = $get('work_services');
                                 if (is_array($details)) {
-                                    $total = 0;
+                                    $total        = 0;
+                                    $totalService = 0;
                                     foreach ($details as $detail) {
-                                        if($detail['sparepart_id'] !== null){
+                                        if ($detail['sparepart_id'] !== null) {
                                             $sparepart = Sparepart::find($detail['sparepart_id']);
 
-                                             if($sparepart->stock >= $detail['quantity']){
+                                            if ($sparepart->stock >= $detail['quantity']) {
                                                 $total += (int) $sparepart->price * $detail['quantity'];
-                                             }else{
-                                                 Notification::make()
-                                                ->title('Insufficient Stock')
-                                                ->body("Available stock: {$sparepart->stock}. You requested: {$detail['quantity']}")
-                                                ->danger()
-                                                ->send();
-                                                
+                                            } else {
+                                                Notification::make()
+                                                    ->title('Insufficient Stock')
+                                                    ->body("Available stock: {$sparepart->stock}. You requested: {$detail['quantity']}")
+                                                    ->danger()
+                                                    ->send();
+
                                                 // Reset values
-                                                $set('quantity',  1);
+                                                $set('quantity', 1);
                                                 $set('subtotal', floatval($sparepart->price));
                                                 $total += (int) $sparepart->price;
-                                             }
-                                           
+                                            }
+
                                         }
                                     }
-                                    $set('total_amount', $total);
+
+                                    if (is_array($WorkServices)) {
+                                        foreach ($WorkServices as $service) {
+                                            if ($service['name'] !== null) {
+                                                $totalService += (int) $service['price'];
+                                            }
+                                        }
+                                    }
+
+                                    $set('total_amount', $total + $totalService);
                                 }
+                            }),
+
+                        Repeater::make('work_services')
+                            ->relationship('work_services')
+                            ->label('Jasa')
+                            ->schema([
+                                TextInput::make('name')
+                                    ->string()
+                                    ->required(),
+
+                                TextInput::make('price')
+                                    ->numeric()
+                                    ->required(),
+                            ])
+                            ->columns(2)
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function (Set $set, Get $get) {
+                                $details         = $get('transaction_details');
+                                $total_sparepart = 0;
+                                if (is_array($details)) {
+                                    foreach ($details as $detail) {
+                                        if ($detail['sparepart_id'] !== null) {
+                                            $sparepart = Sparepart::find($detail['sparepart_id']);
+
+                                            if ($sparepart->stock >= $detail['quantity']) {
+                                                $total_sparepart += (int) $sparepart->price * $detail['quantity'];
+                                            } else {
+                                                Notification::make()
+                                                    ->title('Insufficient Stock')
+                                                    ->body("Available stock: {$sparepart->stock}. You requested: {$detail['quantity']}")
+                                                    ->danger()
+                                                    ->send();
+
+                                                // Reset values
+                                                $set('quantity', 1);
+                                                $set('subtotal', floatval($sparepart->price));
+                                                $total_sparepart += (int) $sparepart->price;
+                                            }
+
+                                        }
+                                    }
+                                }
+
+                                $datas = $get('work_services');
+                                if (is_array($datas)) {
+                                    $total = 0;
+                                    foreach ($datas as $data) {
+                                        $price = floatval($data['price']);
+                                        $total += (int) $price;
+                                    }
+                                    $set('total_amount', $total_sparepart + $total);
+
+                                }
+
                             }),
 
                         TextInput::make('total_amount')
@@ -193,8 +250,7 @@ class TransactionResource extends Resource
                             ->readonly()
                             ->required(),
                     ])
-            // Tambahkan ini untuk memaksa form melakukan perhitungan total setiap kali data berubah
-            ->live(),
+                    ->live(),
             ]);
     }
 
@@ -202,7 +258,6 @@ class TransactionResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('id'),
                 Tables\Columns\TextColumn::make('customer.name'),
                 Tables\Columns\TextColumn::make('transaction_date')
                     ->date(),
@@ -217,16 +272,16 @@ class TransactionResource extends Resource
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
-                  Action::make('details_transaction')
+                Action::make('details_transaction')
                     ->label('Details Transaction')
-                    ->url(fn (Transaction $record): string => 
+                    ->url(fn(Transaction $record): string =>
                         route('filament.admin.resources.transactions.details', ['record' => $record]))
                     ->color('success')
                     ->icon('heroicon-o-document-text'),
             ])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make(),
-            ]);
+            ])->defaultSort('created_at', 'desc');
     }
 
     public static function getRelations(): array
@@ -239,10 +294,11 @@ class TransactionResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListTransactions::route('/'),
-            'create' => Pages\CreateTransaction::route('/create'),
-            'edit' => Pages\EditTransaction::route('/{record}/edit'),
-             'details' => Pages\TransactionDetails::route('/{record}/details'),
+            'index'   => Pages\ListTransactions::route('/'),
+            'create'  => Pages\CreateTransaction::route('/create'),
+            'edit'    => Pages\EditTransaction::route('/{record}/edit'),
+            'details' => Pages\TransactionDetails::route('/{record}/details'),
         ];
     }
+
 }

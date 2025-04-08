@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Filament\Resources\TransactionDetailResource\Pages;
 
 use App\Filament\Resources\TransactionDetailResource;
@@ -16,4 +15,5 @@ class ListTransactionDetails extends ListRecords
             Actions\CreateAction::make(),
         ];
     }
+
 }
