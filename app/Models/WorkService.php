@@ -11,4 +11,5 @@ class WorkService extends Model
     {
         return $this->belongsTo(Transaction::class);
     }
+
 }

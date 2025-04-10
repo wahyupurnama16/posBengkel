@@ -278,6 +278,12 @@ class TransactionResource extends Resource
                         route('filament.admin.resources.transactions.details', ['record' => $record]))
                     ->color('success')
                     ->icon('heroicon-o-document-text'),
+                Action::make('wa')
+                    ->label('Whatsapp')
+                    ->url(fn(Transaction $record): string =>
+                        route('sendWa', ['record' => $record->invoice]))
+                    ->color('success')
+                    ->icon('heroicon-o-document-text'),
             ])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make(),

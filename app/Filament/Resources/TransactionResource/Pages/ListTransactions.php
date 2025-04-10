@@ -13,6 +13,11 @@ class ListTransactions extends ListRecords
     {
         return [
             Actions\CreateAction::make(),
+            Actions\CreateAction::make('wa')
+                ->label('Whatsapp')
+                ->url(fn() => route('admin.laporan'))
+                ->color('success')
+                ->icon('heroicon-o-document-text'),
         ];
     }
 
