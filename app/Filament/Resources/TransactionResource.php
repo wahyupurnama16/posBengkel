@@ -263,6 +263,13 @@ class TransactionResource extends Resource
                     ->date(),
                 Tables\Columns\TextColumn::make('total_amount')
                     ->money('IDR'),
+                Tables\Columns\TextColumn::make('status_transaction')->badge()
+                    ->color(fn(string $state): string => match ($state) {
+                        'pending'                         => 'warning',
+                        'finish'                          => 'success',
+                        'cancel'                          => 'danger',
+                        default                           => 'gray',
+                    }),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime(),
             ])
