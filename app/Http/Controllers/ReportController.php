@@ -9,9 +9,11 @@ class ReportController extends Controller
 {
     public function index()
     {
-        $transaksi = Transaction::all();
-        $pdf       = Pdf::loadView('pdf.transaksi', $transaksi);
-        return $pdf->stream();
+        $transaksi  = Transaction::all();
+        $totalSemua = Transaction::sum('total_amount');
+        $pdf        = Pdf::loadView('pdf.transaksi', ['transaksi' => $transaksi, 'totalSemua' => $totalSemua])->setPaper('a4', 'landscape');
+
+        return $pdf->download('laporan-transaksi' . now() . '.pdf');
 
     }
 }
