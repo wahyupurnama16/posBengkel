@@ -57,13 +57,13 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-            ])
-            ->navigationItems([
-               NavigationItem::make('Laporan')
-                ->icon('heroicon-o-document-chart-bar')
-                 ->url(fn () => route('admin.laporan')) // Gunakan fungsi callback
-                // ->activatedByRoute('admin.laporan*') // Aktif untuk sphp artisan optimize:clearemua route yang dimulai dengan admin.laporan
-                ->sort(70),
             ]);
+            // ->navigationItems([
+            //    NavigationItem::make('Laporan')
+            //     ->icon('heroicon-o-document-chart-bar')
+            //      ->url(fn () => route('admin.laporan')) // Gunakan fungsi callback
+            //     // ->activatedByRoute('admin.laporan*') // Aktif untuk sphp artisan optimize:clearemua route yang dimulai dengan admin.laporan
+            //     ->sort(70),
+            // ]);
     }
 }

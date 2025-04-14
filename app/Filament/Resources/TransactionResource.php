@@ -85,6 +85,11 @@ class TransactionResource extends Resource
                             ->required()
                             ->default(now()),
 
+                        Forms\Components\Select::make('status_transaction')
+                            ->label('Status')
+                            ->options(['pending' => 'Pending', 'finish' => 'Finish', 'cancel' => 'Cancel'])
+                            ->required(),
+
                         Repeater::make('transaction_details')
                             ->relationship()
                             ->schema([
@@ -295,13 +300,6 @@ class TransactionResource extends Resource
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make(),
             ])->defaultSort('created_at', 'desc');
-    }
-
-    public static function getRelations(): array
-    {
-        return [
-            //
-        ];
     }
 
     public static function getPages(): array
