@@ -1,7 +1,10 @@
 <?php
 namespace App\Providers;
 
+use Filament\Pages\Auth\Login;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
+use App\Filament\Pages\Auth\CustomLogin;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -18,6 +21,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Blade::anonymousComponentPath(resource_path('views/filament/pages/auth'), 'filament.pages.auth');
     }
 }

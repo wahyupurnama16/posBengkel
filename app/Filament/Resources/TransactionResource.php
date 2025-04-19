@@ -261,6 +261,7 @@ class TransactionResource extends Resource
 
     public static function table(Table $table): Table
     {
+
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('customer.name'),
@@ -279,7 +280,36 @@ class TransactionResource extends Resource
                     ->dateTime(),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('customer_id')
+                    ->label('Customer')
+                    ->relationship('customer', 'name')
+                    ->searchable()
+                    ->preload(),
+
+                Tables\Filters\SelectFilter::make('status_transaction')
+                    ->label('Status Transaksi')
+                    ->options([
+                        'pending' => 'Pending',
+                        'finish'  => 'Finish',
+                        'cancel'  => 'Cancel',
+                    ]),
+
+                Tables\Filters\Filter::make('transaction_date')
+                    ->form([
+                        Forms\Components\DatePicker::make('transaction_from'),
+                        Forms\Components\DatePicker::make('transaction_until'),
+                    ])
+                    ->query(function ($query, array $data) {
+                        return $query
+                            ->when(
+                                $data['transaction_from'],
+                                fn($query) => $query->whereDate('transaction_date', '>=', $data['transaction_from'])
+                            )
+                            ->when(
+                                $data['transaction_until'],
+                                fn($query) => $query->whereDate('transaction_date', '<=', $data['transaction_until'])
+                            );
+                    }),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
@@ -299,7 +329,8 @@ class TransactionResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make(),
-            ])->defaultSort('created_at', 'desc');
+            ])
+            ->defaultSort('created_at', 'desc');
     }
 
     public static function getPages(): array
@@ -310,6 +341,58 @@ class TransactionResource extends Resource
             'edit'    => Pages\EditTransaction::route('/{record}/edit'),
             'details' => Pages\TransactionDetails::route('/{record}/details'),
         ];
+    }
+
+    // Add this to your TransactionResource class
+
+    protected function getTableHeaderActions(): array
+    {
+        // Get the current filtered query results
+        $query = $this->getFilteredTableQuery();
+
+        // Calculate totals based on the filtered results
+        $totalAmount = $query->sum('total_amount');
+        $totalCount  = $query->count();
+
+        return [
+            \Filament\Tables\Actions\Action::make('transaction_summary')
+                ->label("Total Transaksi: IDR " . number_format($totalAmount, 0, ',', '.') . " ({$totalCount} transaksi)")
+                ->color('warning')
+                ->icon('heroicon-o-calculator')
+                ->disabled(),
+        ];
+    }
+
+    protected function getFilteredTableQuery()
+    {
+        $query = Transaction::query();
+
+        if (request()->has('tableFilters')) {
+            if (request('tableFilters.customer_id')) {
+                $query->where('customer_id', request('tableFilters.customer_id'));
+            }
+
+            if (request('tableFilters.status_transaction')) {
+                $query->where('status_transaction', request('tableFilters.status_transaction'));
+            }
+
+            if (request('tableFilters.transaction_date.transaction_from')) {
+                $query->whereDate('transaction_date', '>=', request('tableFilters.transaction_date.transaction_from'));
+            }
+
+            if (request('tableFilters.transaction_date.transaction_until')) {
+                $query->whereDate('transaction_date', '<=', request('tableFilters.transaction_date.transaction_until'));
+            }
+        }
+
+        return $query;
+    }
+
+// Add this hook to update the summary when filters change
+    public function updatedTableFilters(): void
+    {
+        // This will trigger a re-render of the header actions
+        $this->resetTableHeaderActions();
     }
 
 }

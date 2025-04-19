@@ -53,7 +53,7 @@ class UserChart extends ChartWidget
             
             if ($transaction->status_transaction === 'pending') {
                 $pendingData[$month] = $transaction->total_transactions;
-            } elseif ($transaction->status_transaction === 'success') {
+            } elseif ($transaction->status_transaction === 'finish') {
                 $successData[$month] = $transaction->total_transactions;
             } elseif ($transaction->status_transaction === 'cancel') {
                 $cancelData[$month] = $transaction->total_transactions;

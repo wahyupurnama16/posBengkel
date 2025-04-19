@@ -2,13 +2,21 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\SupplierResource\Pages;
-use App\Models\Supplier;
 use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Resources\Resource;
 use Filament\Tables;
+use App\Models\Supplier;
+use Filament\Forms\Form;
 use Filament\Tables\Table;
+use Filament\Resources\Resource;
+use Filament\Forms\Components\Card;
+use Filament\Tables\Actions\Action;
+use Filament\Forms\Components\Textarea;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Forms\Components\TextInput;
+use App\Filament\Resources\SupplierResource\Pages;
+use App\Filament\Resources\SupplierResource\Pages\EditSupplier;
+use App\Filament\Resources\SupplierResource\Pages\ListSuppliers;
+use App\Filament\Resources\SupplierResource\Pages\CreateSupplier;
 
 class SupplierResource extends Resource
 {
@@ -41,8 +49,18 @@ class SupplierResource extends Resource
                 Tables\Columns\TextColumn::make('phone'),
                 Tables\Columns\TextColumn::make('email'),
             ])
-            ->filters([
-                //
+            ->actions([
+                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
+                  Action::make('wa')
+                    ->label('Whatsapp')
+                    ->url(fn(Supplier $record): string =>
+                      'https://wa.me/'. preg_replace('/^0/', '62', $record->phone))
+                    ->color('success')
+                    ->icon('heroicon-o-document-text'),
+            ])
+            ->bulkActions([
+                Tables\Actions\DeleteBulkAction::make(),
             ]);
     }
 

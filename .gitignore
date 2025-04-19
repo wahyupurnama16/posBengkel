@@ -6,6 +6,7 @@
 /storage/*.key
 /storage/pail
 /vendor
+!/vendor/filament/filament/views
 .env
 .env.backup
 .env.production
