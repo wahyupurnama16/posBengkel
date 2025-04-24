@@ -2,7 +2,6 @@
 namespace App\Filament\Resources\TransactionResource\Pages;
 
 use App\Filament\Resources\TransactionResource;
-use App\Models\Transaction;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 
@@ -10,67 +9,62 @@ class ListTransactions extends ListRecords
 {
     protected static string $resource = TransactionResource::class;
 
-    // Property to track the current filter state
+    // Property untuk tracking filter saat ini
     public $summaryData = [
         'totalAmount' => 0,
         'totalCount'  => 0,
     ];
 
-    // Hook this method to mount lifecycle
+    // Tambahkan property untuk menyimpan status filter
+    public $activeFilters = [];
+
     public function mount(): void
     {
         parent::mount();
-        $this->calculateSummary();
+        $this->updatedTableFilters();
     }
 
-    // Calculate summaries based on current filters
-    public function calculateSummary(): void
+    // Metode untuk memperbarui filter aktif
+    public function updateActiveFilters(): void
     {
-        $query = Transaction::query();
-        // Apply the same filters that are active in the table
-        if (request('tableFilters.customer_id')) {
-            $query->where('customer_id', request('tableFilters.customer_id'));
-        }
-
-        if (request('tableFilters.status_transaction')) {
-            $query->where('status_transaction', request('tableFilters.status_transaction'));
-        }
-
-        if (request('tableFilters.transaction_date.transaction_from')) {
-            $query->whereDate('transaction_date', '>=', request('tableFilters.transaction_date.transaction_from'));
-        }
-
-        if (request('tableFilters.transaction_date.transaction_until')) {
-            $query->whereDate('transaction_date', '<=', request('tableFilters.transaction_date.transaction_until'));
-        }
-        $this->summaryData['totalAmount'] = $query->sum('total_amount') > 0 ? $query->sum('total_amount') : 0;
-        $this->summaryData['totalCount']  = $query->count() > 0 ? $query->count() : 0;
-
+        $this->activeFilters = [
+            'customer_id'        => request('tableFilters.customer_id.value') ?? null,
+            'status_transaction' => request('tableFilters.status_transaction.value') ?? null,
+            'transaction_from'   => request('tableFilters.transaction_date.transaction_from') ?? null,
+            'transaction_until'  => request('tableFilters.transaction_date.transaction_until') ?? null,
+        ];
     }
 
-    // This hook will be called when filters change
+    // Hook yang dipanggil ketika filter berubah
     public function updatedTableFilters(): void
     {
-        $this->calculateSummary();
+        $this->updateActiveFilters();
     }
 
-    // Override header actions to include our dynamic summary
     protected function getHeaderActions(): array
     {
         return [
             Actions\CreateAction::make(),
-            // Actions\Action::make('transaction_summary')
-            //     ->label(fn() => "Total Transaksi: IDR " .
-            //         number_format($this->summaryData['totalAmount'], 0, ',', '.') .
-            //         " ({$this->summaryData['totalCount']} transaksi)")
-            //     ->color('warning')
-            //     ->icon('heroicon-o-calculator')
-            //     ->disabled(),
-            Actions\CreateAction::make('wa')
+
+            // Action PDF yang selalu menggunakan filter terbaru
+            Actions\Action::make('laporan_pdf')
                 ->label('Laporan PDF')
-                ->url(fn() => route('admin.laporan'))
+                ->url(function () {
+                    return route('admin.laporan');
+                })
                 ->color('success')
-                ->icon('heroicon-o-document-text'),
+                ->icon('heroicon-o-document-text')
+                ->extraAttributes([
+                    'id'      => 'laporan-pdf-button',
+                    'onclick' => "
+                    event.preventDefault();
+                    const currentUrl = new URL(window.location.href);
+                    const baseReportUrl = '" . route('admin.laporan') . "';
+                    const reportUrl = baseReportUrl + currentUrl.search;
+                    window.open(reportUrl, '_blank');
+                ",
+                ])
+                ->openUrlInNewTab(),
         ];
     }
 

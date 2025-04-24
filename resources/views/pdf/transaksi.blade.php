@@ -14,7 +14,21 @@
 </head>
 
 <body>
+
+  <table border="0" width="100%">
+    <tr>
+      <td width="30%">BENGKEL VESPA LIFE</td>
+      <td width="70%" align="right">LAPORAN PENJUALAN - {{ date('d M Y', strtotime($dateFrom)) .' s/d '. date('d M Y',
+        strtotime($dateUntil)) }}
+      </td>
+    </tr>
+  </table>
+
+  <br>
+  <br>
+
   <table border="1" style="border-collapse: collapse; width:100%">
+
     <thead>
       <tr>
         <td style="width:">No</td>
@@ -29,7 +43,7 @@
       @php
       $i=1;
       @endphp
-      @foreach ($transaksi as $tr)
+      @foreach ($transactions as $tr)
       <tr>
         <td style="text-align: center">{{ $i++ }}</td>
         <td style="text-align: center">{{ $tr->invoice }}</td>
@@ -56,7 +70,27 @@
         <td colspan="5" style="text-align: right">Total:</td>
         <td>Rp {{ number_format($totalSemua) }}</td>
       </tr>
+
     </tbody>
+  </table>
+
+  <br>
+  <br>
+  <br>
+  <table border="0" style="border-collapse: collapse; width:100%; text-align:right;">
+    <tr>
+      <td>Pemilik &nbsp; &nbsp;&nbsp;</td>
+    </tr>
+    <tr>
+      <td>
+        <br>
+        <br>
+        <br>
+      </td>
+    </tr>
+    <tr>
+      <td>Vespa Life &nbsp; </td>
+    </tr>
   </table>
 </body>
 
