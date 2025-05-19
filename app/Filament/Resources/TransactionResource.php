@@ -49,6 +49,10 @@ class TransactionResource extends Resource
                                 return "INV-{$dateCode}-{$nextNumber}";
                             }),
 
+                        TextInput::make('vehicle_number')
+                            ->label('Number Vehicle')
+                            ->required(),
+
                         Forms\Components\Select::make('customer_id')
                             ->label('Customer')
                             ->options(Customer::all()->pluck('name', 'id'))
@@ -265,6 +269,7 @@ class TransactionResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('customer.name'),
+                Tables\Columns\TextColumn::make('vehicle_number'),
                 Tables\Columns\TextColumn::make('transaction_date')
                     ->date(),
                 Tables\Columns\TextColumn::make('total_amount')

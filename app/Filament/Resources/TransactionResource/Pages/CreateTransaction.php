@@ -3,6 +3,7 @@ namespace App\Filament\Resources\TransactionResource\Pages;
 
 use App\Filament\Resources\TransactionResource;
 use App\Models\Sparepart;
+use App\Models\Transaction;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
 
@@ -20,18 +21,20 @@ class CreateTransaction extends CreateRecord
         // Get the created transaction with its details
         $transaction = $this->record;
         // Loop through all transaction details
+
         foreach ($transaction->transaction_details as $detail) {
             // Find the sparepart
             $sparepart = Sparepart::find($detail->sparepart_id);
-
             if ($sparepart) {
                 if ($sparepart->stock < $detail->quantity) {
+                    $cek = Transaction::where('id', $transaction->id)->delete();
                     Notification::make()
                         ->title('Insufficient Stock')
                         ->body("Requested quantity: {$detail->quantity}, Available: {$sparepart->stock}")
                         ->danger()
                         ->send();
                     $this->halt();
+                    return;
                 }
 
                 // Reduce the stock
